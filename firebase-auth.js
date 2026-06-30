@@ -1,4 +1,6 @@
 let currentUser = null;
+let authReady = false;
+let pendingLoad = false;
 
 function signInWithGoogle() {
   auth.signInWithPopup(provider)
@@ -36,14 +38,25 @@ function updateUserUI(user) {
   }
 }
 
-auth.onAuthStateChanged(user => {
-  if (user) {
-    currentUser = user;
-    hideLoginScreen();
-    updateUserUI(user);
+function initAuth() {
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      currentUser = user;
+      hideLoginScreen();
+      updateUserUI(user);
+      if (authReady) {
+        loadDate();
+      } else {
+        pendingLoad = true;
+      }
+    } else {
+      currentUser = null;
+      showLoginScreen();
+    }
+  });
+  authReady = true;
+  if (pendingLoad && currentUser) {
+    pendingLoad = false;
     loadDate();
-  } else {
-    currentUser = null;
-    showLoginScreen();
   }
-});
+}

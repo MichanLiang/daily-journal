@@ -376,6 +376,8 @@ function renderCharts() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initAuth();
+
   document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab, btn);
