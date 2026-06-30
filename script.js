@@ -296,7 +296,7 @@ function getChartData() {
     if (!row) return;
     if (row.cat && catMin[row.cat] !== undefined) catMin[row.cat] += 60;
     const engSum = row.eng.reduce((a, v) => a + ENG_VALUES[v], 0);
-    hourEng[h] = engSum / (row.eng.length * 3);
+    hourEng[h] = engSum / 6;
   });
 
   return { catMin, hourEng };
