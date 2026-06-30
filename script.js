@@ -118,6 +118,10 @@ async function loadDate() {
       applySettings();
     }
   }
+
+  if (document.getElementById('page-charts').classList.contains('active')) {
+    renderCharts();
+  }
 }
 
 function formatDate(str) {
