@@ -245,7 +245,7 @@ function renderTasks() {
           <input class="progress-input" type="number" min="0" value="${total}" oninput="updateTask(${i},'total',this.value)">
         </div>
       </td>
-      <td><textarea class="task-input" rows="1" style="resize:none;" placeholder="完成的事情，每行一項…" oninput="updateDone(${i},this.value)">${t.done||''}</textarea></td>
+      <td><textarea class="task-input" rows="1" style="resize:none;" oninput="updateDone(${i},this.value)">${t.done||''}</textarea></td>
     `;
     tbody.appendChild(tr);
   });
