@@ -169,8 +169,8 @@ function buildTable() {
           ${row.eng.map((v,i) => `<div class="eng-cell ${ENG_CLASSES[v]}" onclick="cycleEng('${key}',${i})" title="${i*10}~${(i+1)*10}分鐘"></div>`).join('')}
         </div>
       </td>
-      <td class="td-review"><input type="checkbox" class="review-check" ${row.review ? 'checked' : ''} onchange="toggleReview('${key}',this.checked)"></td>
       <td class="td-feedback"><textarea class="cell-input" rows="1" data-r="${ri}" data-c="3" oninput="updateCell('${key}','feedback',this.value)">${row.feedback}</textarea></td>
+      <td class="td-review"><input type="checkbox" class="review-check" ${row.review ? 'checked' : ''} onchange="toggleReview('${key}',this.checked)"></td>
     `;
     tbody.appendChild(tr);
   });
