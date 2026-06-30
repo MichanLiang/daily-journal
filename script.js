@@ -17,7 +17,7 @@ const CAT_CLASS = {
   '睡眠':    'cat-sleep',
 };
 const ENG_CLASSES = ['', 'high', 'mid', 'low'];
-const ENG_VALUES = [0, 100, 75, 50];
+const ENG_VALUES = [0, 100, 70, 40];
 
 let tableData = {};
 let diaryText = '';
@@ -296,7 +296,7 @@ function getChartData() {
     if (!row) return;
     if (row.cat && catMin[row.cat] !== undefined) catMin[row.cat] += 60;
     const engSum = row.eng.reduce((a, v) => a + ENG_VALUES[v], 0);
-    hourEng[h] = engSum / 6;
+    hourEng[h] = engSum / (row.eng.length * 3);
   });
 
   return { catMin, hourEng };
