@@ -6,7 +6,7 @@ const CAT_COLORS = {
   '工作':    '#A0B5C9',
   '社交':    '#C9A0A0',
   '自我提升':'#95B5A5',
-  '睡眠':    '#B0A8B8',
+  '睡眠':    '#C9A880',
 };
 const CAT_CLASS = {
   '例行事項': 'cat-routine',

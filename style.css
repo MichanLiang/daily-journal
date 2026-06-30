@@ -310,7 +310,7 @@ td:last-child { border-right: none; }
 .cat-work    { background: #DDE5ED; border-color: #A0B5C9; color: #4A6580; }
 .cat-social  { background: #F0DDD8; border-color: #C9A0A0; color: #8A5A5A; }
 .cat-growth  { background: #D8EDE3; border-color: #95B5A5; color: #4A7060; }
-.cat-sleep   { background: #E8E5ED; border-color: #B0A8B8; color: #5A5570; }
+.cat-sleep   { background: #F0E4D8; border-color: #C9A880; color: #7A6040; }
 
 .engagement-grid {
   display: flex;
