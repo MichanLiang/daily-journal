@@ -1,12 +1,12 @@
 const HOURS = Array.from({length: 18}, (_, i) => i + 6);
 const CATEGORIES = ['', '例行事項', '學業', '工作', '社交', '自我提升', '睡眠'];
 const CAT_COLORS = {
-  '例行事項': '#B8ADEB',
-  '學業':    '#E8C76B',
-  '工作':    '#7BBCF0',
-  '社交':    '#F0A0CC',
-  '自我提升':'#6B8F71',
-  '睡眠':    '#ABABBE',
+  '例行事項': '#B8A5C9',
+  '學業':    '#C9B888',
+  '工作':    '#A0B5C9',
+  '社交':    '#C9A0A0',
+  '自我提升':'#95B5A5',
+  '睡眠':    '#B0A8B8',
 };
 const CAT_CLASS = {
   '例行事項': 'cat-routine',

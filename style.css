@@ -305,12 +305,12 @@ td:last-child { border-right: none; }
   cursor: pointer;
 }
 
-.cat-routine { background: #F0EDFF; border-color: #B8ADEB; color: #5B4DB5; }
-.cat-study   { background: var(--yellow-light); border-color: #DEB84A; color: #8A6A00; }
-.cat-work    { background: #E8F4FF; border-color: #7BBCF0; color: #1A6FAD; }
-.cat-social  { background: #FFE8F5; border-color: #F0A0CC; color: #A0346A; }
-.cat-growth  { background: var(--green-light); border-color: #8FBC96; color: #2E6E39; }
-.cat-sleep   { background: #EEEEF2; border-color: #ABABBE; color: #4A4A6A; }
+.cat-routine { background: #E8E0F0; border-color: #B8A5C9; color: #6B5A80; }
+.cat-study   { background: #F0E8D8; border-color: #C9B888; color: #7A6B3D; }
+.cat-work    { background: #DDE5ED; border-color: #A0B5C9; color: #4A6580; }
+.cat-social  { background: #F0DDD8; border-color: #C9A0A0; color: #8A5A5A; }
+.cat-growth  { background: #D8EDE3; border-color: #95B5A5; color: #4A7060; }
+.cat-sleep   { background: #E8E5ED; border-color: #B0A8B8; color: #5A5570; }
 
 .engagement-grid {
   display: flex;
