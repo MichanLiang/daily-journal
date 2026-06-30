@@ -232,17 +232,20 @@ function renderTasks() {
   const tbody = document.getElementById('tasksBody');
   tbody.innerHTML = '';
   tasks.forEach((t, i) => {
+    const doneCount = t.done ? t.done.split('\n').filter(l => l.trim()).length : 0;
+    const total = t.total || 0;
+    const autoProgress = total > 0 ? Math.round((doneCount / total) * 100) : (t.progress || 0);
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input class="task-input" value="${t.theme}" placeholder="樂器 / 學習…" oninput="updateTask(${i},'theme',this.value)"></td>
       <td><input class="task-input" value="${t.goal}" placeholder="目標描述" oninput="updateTask(${i},'goal',this.value)"></td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
-          <div class="progress-bar"><div class="progress-fill" style="width:${t.progress||0}%" id="pf-${i}"></div></div>
-          <input class="progress-input" type="number" min="0" max="100" value="${t.progress||0}" oninput="updateProgress(${i},this.value)">%
+          <input class="progress-input" type="number" min="0" max="100" value="${doneCount}" disabled style="color:var(--accent);font-weight:500;"> /
+          <input class="progress-input" type="number" min="0" value="${total}" oninput="updateTask(${i},'total',this.value)">
         </div>
       </td>
-      <td><input class="task-input" value="${t.done}" placeholder="完成的事情…" oninput="updateTask(${i},'done',this.value)"></td>
+      <td><textarea class="task-input" rows="1" style="resize:none;" placeholder="完成的事情，每行一項…" oninput="updateDone(${i},this.value)">${t.done||''}</textarea></td>
     `;
     tbody.appendChild(tr);
   });
@@ -250,19 +253,22 @@ function renderTasks() {
 
 let saveTasksTimer = null;
 function updateTask(i, field, val) {
-  tasks[i][field] = val;
+  tasks[i][field] = field === 'total' ? (parseInt(val) || 0) : val;
   localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
+  renderTasks();
   if (currentUser) {
     clearTimeout(saveTasksTimer);
     saveTasksTimer = setTimeout(() => saveTasksToFirestore(tasks), 500);
   }
 }
 
-function updateProgress(i, val) {
-  tasks[i].progress = Math.min(100, Math.max(0, parseInt(val)||0));
-  const pf = document.getElementById(`pf-${i}`);
-  if (pf) pf.style.width = tasks[i].progress + '%';
+function updateDone(i, val) {
+  tasks[i].done = val;
+  const doneCount = val.split('\n').filter(l => l.trim()).length;
+  const total = tasks[i].total || 0;
+  tasks[i].progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
   localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
+  renderTasks();
   if (currentUser) {
     clearTimeout(saveTasksTimer);
     saveTasksTimer = setTimeout(() => saveTasksToFirestore(tasks), 500);
@@ -270,7 +276,7 @@ function updateProgress(i, val) {
 }
 
 function addTask() {
-  tasks.push({ theme: '', goal: '', progress: 0, done: '' });
+  tasks.push({ theme: '', goal: '', total: 0, progress: 0, done: '' });
   localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
   renderTasks();
   if (currentUser) saveTasksToFirestore(tasks);
