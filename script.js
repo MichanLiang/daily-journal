@@ -340,7 +340,7 @@ function renderCharts() {
 
   const radarLabels = HOURS.map(h => `${h}時`);
   const radarVals   = HOURS.map(h => Math.round(hourEng[h]));
-  const pointColors = radarVals.map(v => v >= 67 ? '#6B8F71' : v >= 34 ? '#E8C76B' : v > 0 ? '#D97B6C' : '#E5E2DA');
+  const pointColors = radarVals.map(v => v >= 80 ? '#6B8F71' : v >= 70 ? '#E8C76B' : '#D97B6C');
 
   if (charts.engagementRadar) charts.engagementRadar.destroy();
   charts.engagementRadar = new Chart(document.getElementById('engagementRadar'), {
