@@ -13,6 +13,7 @@ function signInWithGoogle() {
 function signOut() {
   auth.signOut().then(() => {
     currentUser = null;
+    closeSettings();
     showLoginScreen();
   });
 }
@@ -34,7 +35,11 @@ function updateUserUI(user) {
     avatar.src = user.photoURL || '';
     avatar.alt = user.displayName || '';
     avatar.style.display = user.photoURL ? 'block' : 'none';
-    name.textContent = user.displayName || user.email;
+    if (settings.displayName) {
+      name.textContent = settings.displayName;
+    } else {
+      name.textContent = user.displayName || user.email;
+    }
   }
 }
 

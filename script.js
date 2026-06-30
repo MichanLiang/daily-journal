@@ -23,6 +23,8 @@ let tableData = {};
 let diaryText = '';
 let tasks = [];
 let charts = {};
+let reviews = [];
+let settings = { displayName: '' };
 
 function todayStr() {
   const d = new Date();
@@ -59,20 +61,25 @@ async function loadDate() {
   tableData = JSON.parse(localStorage.getItem(getKey('table')) || '{}');
   diaryText = localStorage.getItem(getKey('diary')) || '';
   tasks = JSON.parse(localStorage.getItem('ddxj_tasks') || '[]');
+  reviews = JSON.parse(localStorage.getItem('ddxj_reviews') || '[]');
+  settings = JSON.parse(localStorage.getItem('ddxj_settings') || '{"displayName":""}');
   document.getElementById('goalYear').value = localStorage.getItem(goalKey('year')) || '';
   document.getElementById('goalMonth').value = localStorage.getItem(goalKey('month')) || '';
   document.getElementById('goalDay').value = localStorage.getItem(goalKey('day')) || '';
 
+  applySettings();
   buildTable();
   document.getElementById('diaryInput').value = diaryText;
-  if (tasks.length === 0) tasks = [{ theme: '', goal: '', progress: 0, done: '' }];
+  if (tasks.length === 0) tasks = [{ theme: '', goal: '', total: 0, progress: 0, done: '' }];
   renderTasks();
 
   if (currentUser) {
-    const [dayData, goalsData, tasksData] = await Promise.all([
+    const [dayData, goalsData, tasksData, reviewsData, settingsData] = await Promise.all([
       loadDayFromFirestore(currentDate),
       loadGoalsFromFirestore(),
-      loadTasksFromFirestore()
+      loadTasksFromFirestore(),
+      loadReviewsFromFirestore(),
+      loadSettingsFromFirestore()
     ]);
 
     if (dayData) {
@@ -96,8 +103,19 @@ async function loadDate() {
     if (tasksData) {
       tasks = tasksData;
       localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
-      if (tasks.length === 0) tasks = [{ theme: '', goal: '', progress: 0, done: '' }];
+      if (tasks.length === 0) tasks = [{ theme: '', goal: '', total: 0, progress: 0, done: '' }];
       renderTasks();
+    }
+
+    if (reviewsData) {
+      reviews = reviewsData;
+      localStorage.setItem('ddxj_reviews', JSON.stringify(reviews));
+    }
+
+    if (settingsData) {
+      settings = settingsData;
+      localStorage.setItem('ddxj_settings', JSON.stringify(settings));
+      applySettings();
     }
   }
 }
@@ -134,7 +152,7 @@ function buildTable() {
   tbody.innerHTML = '';
   HOURS.forEach((h, ri) => {
     const key = `h${h}`;
-    if (!tableData[key]) tableData[key] = { todo: '', actual: '', cat: '', eng: [0,0,0,0,0,0], feedback: '' };
+    if (!tableData[key]) tableData[key] = { todo: '', actual: '', cat: '', eng: [0,0,0,0,0,0], feedback: '', review: false };
     const row = tableData[key];
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -151,6 +169,7 @@ function buildTable() {
           ${row.eng.map((v,i) => `<div class="eng-cell ${ENG_CLASSES[v]}" onclick="cycleEng('${key}',${i})" title="${i*10}~${(i+1)*10}分鐘"></div>`).join('')}
         </div>
       </td>
+      <td class="td-review"><input type="checkbox" class="review-check" ${row.review ? 'checked' : ''} onchange="toggleReview('${key}',this.checked)"></td>
       <td class="td-feedback"><textarea class="cell-input" rows="1" data-r="${ri}" data-c="3" oninput="updateCell('${key}','feedback',this.value)">${row.feedback}</textarea></td>
     `;
     tbody.appendChild(tr);
@@ -173,6 +192,26 @@ function cycleEng(key, idx) {
   tableData[key].eng[idx] = (v + 1) % 4;
   const cell = document.querySelectorAll(`#eng-${key} .eng-cell`)[idx];
   cell.className = `eng-cell ${ENG_CLASSES[tableData[key].eng[idx]]}`;
+  saveTable();
+}
+
+function toggleReview(key, checked) {
+  tableData[key].review = checked;
+  if (checked && tableData[key].feedback) {
+    const existing = reviews.find(r => r.date === currentDate && r.hour === key);
+    if (!existing) {
+      reviews.push({
+        date: currentDate,
+        hour: key,
+        text: tableData[key].feedback,
+        cat: tableData[key].cat
+      });
+    }
+  } else if (!checked) {
+    reviews = reviews.filter(r => !(r.date === currentDate && r.hour === key));
+  }
+  localStorage.setItem('ddxj_reviews', JSON.stringify(reviews));
+  if (currentUser) saveReviewsToFirestore(reviews);
   saveTable();
 }
 
@@ -288,6 +327,7 @@ function switchTab(tab, el) {
   document.getElementById(`page-${tab}`).classList.add('active');
   el.classList.add('active');
   if (tab === 'charts') renderCharts();
+  if (tab === 'review') renderReview();
 }
 
 function getChartData() {
@@ -381,6 +421,115 @@ function renderCharts() {
   });
 }
 
+function applySettings() {
+  const nameEl = document.getElementById('userName');
+  if (settings.displayName) {
+    nameEl.textContent = settings.displayName;
+  } else if (currentUser) {
+    nameEl.textContent = currentUser.displayName || currentUser.email || '';
+  }
+}
+
+function openSettings() {
+  document.getElementById('inputDisplayName').value = settings.displayName || '';
+  document.getElementById('settingsModal').classList.add('show');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('show');
+}
+
+function saveSettings() {
+  settings.displayName = document.getElementById('inputDisplayName').value.trim();
+  localStorage.setItem('ddxj_settings', JSON.stringify(settings));
+  applySettings();
+  closeSettings();
+  if (currentUser) saveSettingsToFirestore(settings);
+}
+
+function getWeekRange(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDay();
+  const start = new Date(d);
+  start.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { start, end };
+}
+
+function getMonthKey(dateStr) {
+  return dateStr.slice(0, 7);
+}
+
+function getYearKey(dateStr) {
+  return dateStr.slice(0, 4);
+}
+
+function formatDateShort(dateStr) {
+  const [y, m, d] = dateStr.split('-');
+  return `${parseInt(m)}/${parseInt(d)}`;
+}
+
+function renderReview() {
+  const content = document.getElementById('reviewContent');
+  const activeTab = document.querySelector('.review-tab.active');
+  const period = activeTab ? activeTab.dataset.period : 'week';
+
+  if (reviews.length === 0) {
+    content.innerHTML = '<div class="review-empty">目前沒有檢討紀錄<br><span style="font-size:12px;color:#C8C4BC;">在計劃表勾選回饋欄的方框，即可加入檢討簿</span></div>';
+    return;
+  }
+
+  let grouped = {};
+
+  if (period === 'week') {
+    reviews.forEach(r => {
+      const { start, end } = getWeekRange(r.date);
+      const key = `${start.toISOString().slice(0,10)}_${end.toISOString().slice(0,10)}`;
+      const label = `${formatDateShort(start.toISOString().slice(0,10))} ~ ${formatDateShort(end.toISOString().slice(0,10))}`;
+      if (!grouped[key]) grouped[key] = { label, items: [] };
+      grouped[key].items.push(r);
+    });
+  } else if (period === 'month') {
+    reviews.forEach(r => {
+      const key = getMonthKey(r.date);
+      const [y, m] = key.split('-');
+      const label = `${y} 年 ${parseInt(m)} 月`;
+      if (!grouped[key]) grouped[key] = { label, items: [] };
+      grouped[key].items.push(r);
+    });
+  } else {
+    reviews.forEach(r => {
+      const key = getYearKey(r.date);
+      const label = `${key} 年`;
+      if (!grouped[key]) grouped[key] = { label, items: [] };
+      grouped[key].items.push(r);
+    });
+  }
+
+  const keys = Object.keys(grouped).sort().reverse();
+
+  if (keys.length === 0) {
+    content.innerHTML = '<div class="review-empty">目前沒有檢討紀錄</div>';
+    return;
+  }
+
+  content.innerHTML = keys.map(k => {
+    const g = grouped[k];
+    return `
+      <div class="review-group">
+        <div class="review-group-title">${g.label}</div>
+        ${g.items.map(r => `
+          <div class="review-item">
+            <div class="review-item-date">${formatDateShort(r.date)} ${r.hour.replace('h','')}:00${r.cat ? ' · ' + r.cat : ''}</div>
+            <div class="review-item-text">${r.text}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initAuth();
 
@@ -414,5 +563,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btnGoogleLogin').addEventListener('click', signInWithGoogle);
-  document.getElementById('btnLogout').addEventListener('click', signOut);
+
+  document.getElementById('userMenu').addEventListener('click', openSettings);
+  document.getElementById('btnCloseSettings').addEventListener('click', closeSettings);
+  document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
+  document.getElementById('btnLogoutFull').addEventListener('click', signOut);
+
+  document.getElementById('settingsModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('settingsModal')) closeSettings();
+  });
+
+  document.querySelectorAll('.review-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.review-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderReview();
+    });
+  });
 });

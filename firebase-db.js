@@ -61,3 +61,39 @@ async function saveTasksToFirestore(tasksList) {
     console.warn('Firestore 寫入 tasks 失敗:', e);
   }
 }
+
+async function loadReviewsFromFirestore() {
+  try {
+    const snap = await userDoc().collection('meta').doc('reviews').get();
+    if (snap.exists && snap.data().list) return snap.data().list;
+  } catch (e) {
+    console.warn('Firestore 讀取 reviews 失敗:', e);
+  }
+  return null;
+}
+
+async function saveReviewsToFirestore(reviewsList) {
+  try {
+    await userDoc().collection('meta').doc('reviews').set({ list: reviewsList }, { merge: true });
+  } catch (e) {
+    console.warn('Firestore 寫入 reviews 失敗:', e);
+  }
+}
+
+async function loadSettingsFromFirestore() {
+  try {
+    const snap = await userDoc().collection('meta').doc('settings').get();
+    if (snap.exists) return snap.data();
+  } catch (e) {
+    console.warn('Firestore 讀取 settings 失敗:', e);
+  }
+  return null;
+}
+
+async function saveSettingsToFirestore(settingsData) {
+  try {
+    await userDoc().collection('meta').doc('settings').set(settingsData, { merge: true });
+  } catch (e) {
+    console.warn('Firestore 寫入 settings 失敗:', e);
+  }
+}

@@ -623,6 +623,7 @@ canvas { max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
 }
 
 .user-avatar {
@@ -642,19 +643,220 @@ canvas { max-width: 100%; }
   white-space: nowrap;
 }
 
-.btn-logout {
-  padding: 4px 10px;
-  font-family: 'Noto Serif TC', serif;
-  font-size: 11px;
+/* ── SETTINGS MODAL ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: var(--text);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+}
+
+.settings-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.settings-input:focus {
+  border-color: var(--accent);
+}
+
+.btn-save-settings {
+  width: 100%;
+  padding: 8px;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 13px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-save-settings:hover {
+  opacity: 0.85;
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+.btn-logout-full {
+  width: 100%;
+  padding: 8px;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 13px;
+  background: transparent;
+  color: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-logout-full:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+/* ── FEEDBACK CHECKBOX ── */
+.td-review {
+  text-align: center;
+  width: 30px;
+}
+
+.review-check {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+/* ── REVIEW PAGE ── */
+.review-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  width: fit-content;
+}
+
+.review-tab {
+  padding: 8px 20px;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 13px;
+  border: none;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
 }
 
-.btn-logout:hover {
-  border-color: var(--red);
-  color: var(--red);
+.review-tab.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+}
+
+.review-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 200px;
+  box-shadow: var(--shadow);
+}
+
+.review-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 40px 0;
+}
+
+.review-group {
+  margin-bottom: 20px;
+}
+
+.review-group:last-child {
+  margin-bottom: 0;
+}
+
+.review-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.review-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-item-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.review-item-text {
+  color: var(--text);
 }
