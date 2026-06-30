@@ -157,18 +157,6 @@ function buildTable() {
   });
 }
 
-function navigateCell(ri, ci, dir) {
-  const rows = HOURS.length;
-  const cols = [0, 1, 2, 3];
-  let nr = ri, nc = ci;
-  if (dir === 'ArrowUp')    nr = Math.max(0, ri - 1);
-  if (dir === 'ArrowDown')  nr = Math.min(rows - 1, ri + 1);
-  if (dir === 'ArrowLeft')  nc = cols.indexOf(ci) > 0 ? cols[cols.indexOf(ci) - 1] : ci;
-  if (dir === 'ArrowRight') nc = cols.indexOf(ci) < cols.length - 1 ? cols[cols.indexOf(ci) + 1] : ci;
-  const el = document.querySelector(`[data-r="${nr}"][data-c="${nc}"]`);
-  if (el) el.focus();
-}
-
 function updateCell(key, field, val) {
   tableData[key][field] = val;
   saveTable();
@@ -388,15 +376,6 @@ function renderCharts() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('tableBody').addEventListener('keydown', e => {
-    const el = e.target;
-    if (el.dataset.r == null) return;
-    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) {
-      e.preventDefault();
-      navigateCell(+el.dataset.r, +el.dataset.c, e.key);
-    }
-  });
-
   document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab, btn);
