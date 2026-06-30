@@ -234,14 +234,14 @@ function renderTasks() {
   tasks.forEach((t, i) => {
     const doneCount = t.done ? t.done.split('\n').filter(l => l.trim()).length : 0;
     const total = t.total || 0;
-    const autoProgress = total > 0 ? Math.round((doneCount / total) * 100) : (t.progress || 0);
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input class="task-input" value="${t.theme}" placeholder="樂器 / 學習…" oninput="updateTask(${i},'theme',this.value)"></td>
       <td><input class="task-input" value="${t.goal}" placeholder="目標描述" oninput="updateTask(${i},'goal',this.value)"></td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
-          <input class="progress-input" type="number" min="0" max="100" value="${doneCount}" disabled style="color:var(--accent);font-weight:500;"> /
+          <span class="progress-input" id="done-count-${i}" style="color:var(--accent);font-weight:500;text-align:right;">${doneCount}</span>
+          <span>/</span>
           <input class="progress-input" type="number" min="0" value="${total}" oninput="updateTask(${i},'total',this.value)">
         </div>
       </td>
@@ -255,7 +255,6 @@ let saveTasksTimer = null;
 function updateTask(i, field, val) {
   tasks[i][field] = field === 'total' ? (parseInt(val) || 0) : val;
   localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
-  renderTasks();
   if (currentUser) {
     clearTimeout(saveTasksTimer);
     saveTasksTimer = setTimeout(() => saveTasksToFirestore(tasks), 500);
@@ -267,8 +266,9 @@ function updateDone(i, val) {
   const doneCount = val.split('\n').filter(l => l.trim()).length;
   const total = tasks[i].total || 0;
   tasks[i].progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+  const countEl = document.getElementById(`done-count-${i}`);
+  if (countEl) countEl.textContent = doneCount;
   localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
-  renderTasks();
   if (currentUser) {
     clearTimeout(saveTasksTimer);
     saveTasksTimer = setTimeout(() => saveTasksToFirestore(tasks), 500);
