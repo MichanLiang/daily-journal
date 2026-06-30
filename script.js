@@ -55,24 +55,36 @@ async function loadDate() {
   const isToday = currentDate === todayStr();
   document.getElementById('dateToday').classList.toggle('hidden', isToday);
 
+  tableData = JSON.parse(localStorage.getItem(getKey('table')) || '{}');
+  diaryText = localStorage.getItem(getKey('diary')) || '';
+  tasks = JSON.parse(localStorage.getItem('ddxj_tasks') || '[]');
+  document.getElementById('goalYear').value = localStorage.getItem(goalKey('year')) || '';
+  document.getElementById('goalMonth').value = localStorage.getItem(goalKey('month')) || '';
+  document.getElementById('goalDay').value = localStorage.getItem(goalKey('day')) || '';
+
+  buildTable();
+  document.getElementById('diaryInput').value = diaryText;
+  if (tasks.length === 0) tasks = [{ theme: '', goal: '', progress: 0, done: '' }];
+  renderTasks();
+
   if (currentUser) {
-    const data = await loadDayFromFirestore(currentDate);
-    if (data) {
-      tableData = data.table || {};
-      diaryText = data.diary || '';
-      document.getElementById('goalDay').value = data.dayGoal || '';
+    const [dayData, goalsData, tasksData] = await Promise.all([
+      loadDayFromFirestore(currentDate),
+      loadGoalsFromFirestore(),
+      loadTasksFromFirestore()
+    ]);
+
+    if (dayData) {
+      tableData = dayData.table || {};
+      diaryText = dayData.diary || '';
+      document.getElementById('goalDay').value = dayData.dayGoal || '';
       localStorage.setItem(getKey('table'), JSON.stringify(tableData));
       localStorage.setItem(getKey('diary'), diaryText);
-      localStorage.setItem(goalKey('day'), data.dayGoal || '');
-    } else {
-      tableData = JSON.parse(localStorage.getItem(getKey('table')) || '{}');
-      diaryText = localStorage.getItem(getKey('diary')) || '';
-      document.getElementById('goalYear').value = localStorage.getItem(goalKey('year')) || '';
-      document.getElementById('goalMonth').value = localStorage.getItem(goalKey('month')) || '';
-      document.getElementById('goalDay').value = localStorage.getItem(goalKey('day')) || '';
+      localStorage.setItem(goalKey('day'), dayData.dayGoal || '');
+      buildTable();
+      document.getElementById('diaryInput').value = diaryText;
     }
 
-    const goalsData = await loadGoalsFromFirestore();
     if (goalsData) {
       document.getElementById('goalYear').value = goalsData.yearGoal || '';
       document.getElementById('goalMonth').value = goalsData.monthGoal || '';
@@ -80,27 +92,13 @@ async function loadDate() {
       localStorage.setItem(goalKey('month'), goalsData.monthGoal || '');
     }
 
-    const tasksData = await loadTasksFromFirestore();
     if (tasksData) {
       tasks = tasksData;
       localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
-    } else {
-      tasks = JSON.parse(localStorage.getItem('ddxj_tasks') || '[]');
+      if (tasks.length === 0) tasks = [{ theme: '', goal: '', progress: 0, done: '' }];
+      renderTasks();
     }
-  } else {
-    tableData = JSON.parse(localStorage.getItem(getKey('table')) || '{}');
-    diaryText = localStorage.getItem(getKey('diary')) || '';
-    tasks = JSON.parse(localStorage.getItem('ddxj_tasks') || '[]');
-    document.getElementById('goalYear').value = localStorage.getItem(goalKey('year')) || '';
-    document.getElementById('goalMonth').value = localStorage.getItem(goalKey('month')) || '';
-    document.getElementById('goalDay').value = localStorage.getItem(goalKey('day')) || '';
   }
-
-  buildTable();
-  document.getElementById('diaryInput').value = diaryText;
-
-  if (tasks.length === 0) tasks = [{ theme: '', goal: '', progress: 0, done: '' }];
-  renderTasks();
 }
 
 function formatDate(str) {
