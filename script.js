@@ -681,6 +681,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
   document.getElementById('btnLogoutFull').addEventListener('click', signOut);
 
+  document.getElementById('btnClearFirestore').addEventListener('click', async () => {
+    if (!confirm('清除所有雲端資料（保留今天的）？此操作無法復原。')) return;
+    await clearFirestoreExceptToday();
+    alert('已清除');
+    closeSettings();
+    loadDate();
+  });
+
   document.getElementById('settingsModal').addEventListener('click', e => {
     if (e.target === document.getElementById('settingsModal')) closeSettings();
   });

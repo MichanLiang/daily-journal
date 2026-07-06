@@ -97,3 +97,35 @@ async function saveSettingsToFirestore(settingsData) {
     console.warn('Firestore 寫入 settings 失敗:', e);
   }
 }
+
+async function clearFirestoreExceptToday() {
+  if (!currentUser) return;
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  const daysSnap = await userDoc().collection('days').get();
+  const batch1 = db.batch();
+  let count = 0;
+  daysSnap.forEach(doc => {
+    if (doc.id !== todayStr) {
+      batch1.delete(doc.ref);
+      count++;
+    }
+  });
+  if (count > 0) await batch1.commit();
+
+  await userDoc().collection('meta').doc('goals').delete().catch(() => {});
+  await userDoc().collection('meta').doc('tasks').delete().catch(() => {});
+  await userDoc().collection('meta').doc('reviews').delete().catch(() => {});
+  await userDoc().collection('meta').doc('settings').delete().catch(() => {});
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith('ddxj_')) continue;
+    if (key.startsWith(`ddxj_table_${todayStr}`)) continue;
+    if (key.startsWith(`ddxj_diary_${todayStr}`)) continue;
+    if (key === `ddxj_goals_day_${todayStr}`) continue;
+    if (key === 'ddxj_settings') continue;
+    localStorage.removeItem(key);
+  }
+}
