@@ -370,8 +370,13 @@ function switchTab(tab, el) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`page-${tab}`).classList.add('active');
   if (el) el.classList.add('active');
-  const select = document.getElementById('mobileTabSelect');
-  if (select) select.value = tab;
+  const btn = document.getElementById('mobileTabBtn');
+  if (btn) {
+    const labels = { plan: '計劃表', charts: '圖表', review: '檢討簿' };
+    btn.textContent = labels[tab] + ' ▾';
+  }
+  const options = document.querySelectorAll('.mobile-tab-option');
+  options.forEach(o => o.classList.toggle('active', o.dataset.tab === tab));
   if (tab === 'charts') renderCharts();
   if (tab === 'review') renderReview();
 }
@@ -585,8 +590,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.getElementById('mobileTabSelect').addEventListener('change', e => {
-    const tab = e.target.value;
+  document.getElementById('mobileTabBtn').addEventListener('click', () => {
+    document.getElementById('mobileTabDropdown').classList.add('show');
+  });
+
+  document.getElementById('mobileTabDropdown').addEventListener('click', e => {
+    const option = e.target.closest('.mobile-tab-option');
+    if (!option) return;
+    const tab = option.dataset.tab;
+    document.querySelectorAll('.mobile-tab-option').forEach(o => o.classList.remove('active'));
+    option.classList.add('active');
+    document.getElementById('mobileTabDropdown').classList.remove('show');
+    document.getElementById('mobileTabBtn').textContent = option.textContent + ' ▾';
     const btn = document.querySelector(`.nav-tab[data-tab="${tab}"]`);
     switchTab(tab, btn);
   });

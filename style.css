@@ -521,6 +521,69 @@ canvas { max-width: 100%; }
 
 .mobile-tab-select { display: none; }
 
+.mobile-tab-btn {
+  display: none;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 12px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.mobile-tab-dropdown {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-tab-dropdown.show {
+  display: flex;
+}
+
+.mobile-tab-option {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 14px;
+  padding: 14px 40px;
+  color: var(--text);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+}
+
+.mobile-tab-option:last-child {
+  border-bottom: none;
+}
+
+.mobile-tab-option:hover {
+  background: var(--bg);
+}
+
+.mobile-tab-option.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.mobile-tab-dropdown-inner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  width: 200px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .header {
@@ -560,19 +623,9 @@ canvas { max-width: 100%; }
 
   .nav-tabs { display: none; }
 
-  .mobile-tab-select {
-    display: block;
-    font-family: 'Noto Serif TC', serif;
-    font-size: 12px;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: var(--surface);
-    color: var(--text-muted);
-    outline: none;
-    cursor: pointer;
-    appearance: auto;
-  }
+  .mobile-tab-btn { display: block; }
+
+  .mobile-tab-select { display: none; }
 
   .user-menu {
     gap: 0;
