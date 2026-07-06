@@ -74,7 +74,7 @@ async function loadDate() {
   renderTasks();
 
   if (currentUser) {
-    showSyncStatus('syncing...', '#3498db');
+    showSyncStatus('syncing... [' + currentUser.uid.slice(0, 8) + ']', '#3498db');
 
     function withTimeout(promise, name, ms) {
       return Promise.race([
