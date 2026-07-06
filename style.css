@@ -659,8 +659,10 @@ canvas { max-width: 100%; }
   .goal-separator { display: none; }
 
   .charts-grid { grid-template-columns: 1fr; gap: 12px; }
-  .chart-card { padding: 14px; }
+  .chart-card { padding: 14px; overflow: hidden; }
   .chart-title { font-size: 13px; margin-bottom: 10px; padding-bottom: 8px; }
+  #page-charts canvas { max-width: 100% !important; height: auto !important; }
+  #page-charts { padding: 0; overflow-x: hidden; }
   .main { padding: 10px 12px; }
   .tasks-table { min-width: 500px; }
 
