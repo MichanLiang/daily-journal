@@ -141,21 +141,29 @@ async function seedLocalStorageToFirestore() {
   return seeded;
 }
 
+let loadId = 0;
+
 async function loadDate() {
+  const loadAt = currentDate;
+  const myLoadId = ++loadId;
+
   document.getElementById('dateDisplay').textContent = formatDate(currentDate);
   document.getElementById('datePicker').value = currentDate;
 
   const isToday = currentDate === todayStr();
   document.getElementById('dateToday').classList.toggle('hidden', isToday);
 
-  tableData = JSON.parse(localStorage.getItem(getKey('table')) || '{}');
-  diaryText = localStorage.getItem(getKey('diary')) || '';
+  const dayGoalKey = `ddxj_goals_day_${loadAt}`;
+  const [y, m] = loadAt.split('-');
+
+  tableData = JSON.parse(localStorage.getItem(`ddxj_table_${loadAt}`) || '{}');
+  diaryText = localStorage.getItem(`ddxj_diary_${loadAt}`) || '';
   tasks = JSON.parse(localStorage.getItem('ddxj_tasks') || '[]');
   reviews = JSON.parse(localStorage.getItem('ddxj_reviews') || '[]');
   settings = JSON.parse(localStorage.getItem('ddxj_settings') || '{"displayName":""}');
-  document.getElementById('goalYear').value = localStorage.getItem(goalKey('year')) || '';
-  document.getElementById('goalMonth').value = localStorage.getItem(goalKey('month')) || '';
-  document.getElementById('goalDay').value = localStorage.getItem(goalKey('day')) || '';
+  document.getElementById('goalYear').value = localStorage.getItem(`ddxj_goals_year_${y}`) || '';
+  document.getElementById('goalMonth').value = localStorage.getItem(`ddxj_goals_month_${y}-${m}`) || '';
+  document.getElementById('goalDay').value = localStorage.getItem(dayGoalKey) || '';
 
   applySettings();
   buildTable();
@@ -165,20 +173,22 @@ async function loadDate() {
 
   if (currentUser) {
     const [dayData, goalsData, tasksData, reviewsData, settingsData] = await Promise.all([
-      loadDayFromFirestore(currentDate),
+      loadDayFromFirestore(loadAt),
       loadGoalsFromFirestore(),
       loadTasksFromFirestore(),
       loadReviewsFromFirestore(),
       loadSettingsFromFirestore()
     ]);
 
+    if (myLoadId !== loadId) return;
+
     if (dayData) {
       tableData = dayData.table || {};
       diaryText = dayData.diary || '';
       document.getElementById('goalDay').value = dayData.dayGoal || '';
-      localStorage.setItem(getKey('table'), JSON.stringify(tableData));
-      localStorage.setItem(getKey('diary'), diaryText);
-      localStorage.setItem(goalKey('day'), dayData.dayGoal || '');
+      localStorage.setItem(`ddxj_table_${loadAt}`, JSON.stringify(tableData));
+      localStorage.setItem(`ddxj_diary_${loadAt}`, diaryText);
+      localStorage.setItem(dayGoalKey, dayData.dayGoal || '');
       buildTable();
       document.getElementById('diaryInput').value = diaryText;
     }
@@ -186,8 +196,8 @@ async function loadDate() {
     if (goalsData) {
       document.getElementById('goalYear').value = goalsData.yearGoal || '';
       document.getElementById('goalMonth').value = goalsData.monthGoal || '';
-      localStorage.setItem(goalKey('year'), goalsData.yearGoal || '');
-      localStorage.setItem(goalKey('month'), goalsData.monthGoal || '');
+      localStorage.setItem(`ddxj_goals_year_${y}`, goalsData.yearGoal || '');
+      localStorage.setItem(`ddxj_goals_month_${y}-${m}`, goalsData.monthGoal || '');
     }
 
     if (tasksData) {
