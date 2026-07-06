@@ -369,7 +369,9 @@ function switchTab(tab, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`page-${tab}`).classList.add('active');
-  el.classList.add('active');
+  if (el) el.classList.add('active');
+  const select = document.getElementById('mobileTabSelect');
+  if (select) select.value = tab;
   if (tab === 'charts') renderCharts();
   if (tab === 'review') renderReview();
 }
@@ -581,6 +583,12 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       switchTab(btn.dataset.tab, btn);
     });
+  });
+
+  document.getElementById('mobileTabSelect').addEventListener('change', e => {
+    const tab = e.target.value;
+    const btn = document.querySelector(`.nav-tab[data-tab="${tab}"]`);
+    switchTab(tab, btn);
   });
 
   document.getElementById('goalYear').addEventListener('input', saveGoals);
