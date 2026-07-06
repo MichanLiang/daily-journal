@@ -528,6 +528,11 @@ canvas { max-width: 100%; }
     gap: 0;
   }
 
+  .logo {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
   .logo span { display: none; }
 
   .header-right {
@@ -548,8 +553,9 @@ canvas { max-width: 100%; }
   }
 
   .date-display {
-    font-size: 13px;
+    font-size: 12px;
     min-width: auto;
+    white-space: nowrap;
   }
 
   .nav-tabs { display: none; }
