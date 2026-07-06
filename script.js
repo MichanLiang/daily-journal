@@ -34,112 +34,7 @@ function todayStr() {
   return `${y}-${m}-${day}`;
 }
 
-function flushSave() {
-  clearTimeout(saveTableTimer);
-  clearTimeout(saveDiaryTimer);
-  clearTimeout(saveGoalsTimer);
-  clearTimeout(saveTasksTimer);
-  diaryText = document.getElementById('diaryInput').value;
-  const dayGoal = document.getElementById('goalDay').value;
-  const yearGoal = document.getElementById('goalYear').value;
-  const monthGoal = document.getElementById('goalMonth').value;
-  localStorage.setItem(getKey('table'), JSON.stringify(tableData));
-  localStorage.setItem(getKey('diary'), diaryText);
-  localStorage.setItem(goalKey('day'), dayGoal);
-  localStorage.setItem(goalKey('year'), yearGoal);
-  localStorage.setItem(goalKey('month'), monthGoal);
-  localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
-  localStorage.setItem('ddxj_reviews', JSON.stringify(reviews));
-  localStorage.setItem('ddxj_settings', JSON.stringify(settings));
-  if (currentUser) {
-    saveDayToFirestore(currentDate, { table: tableData, diary: diaryText, dayGoal });
-    saveGoalsToFirestore({ yearGoal, monthGoal });
-    saveTasksToFirestore(tasks);
-    saveReviewsToFirestore(reviews);
-    saveSettingsToFirestore(settings);
-  }
-}
-
 let currentDate = todayStr();
-
-function getKey(type) {
-  return `ddxj_${type}_${currentDate}`;
-}
-
-function goalKey(type) {
-  const [y, m] = currentDate.split('-');
-  if (type === 'year') return `ddxj_goals_year_${y}`;
-  if (type === 'month') return `ddxj_goals_month_${y}-${m}`;
-  if (type === 'day') return `ddxj_goals_day_${currentDate}`;
-}
-
-function init() {
-  loadDate();
-}
-
-let localStorageSeeded = false;
-
-async function seedLocalStorageToFirestore() {
-  const seeded = { days: 0, goals: false, tasks: false, reviews: false, settings: false };
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key) continue;
-
-    const dayMatch = key.match(/^ddxj_table_(\d{4}-\d{2}-\d{2})$/);
-    if (dayMatch) {
-      const date = dayMatch[1];
-      const table = JSON.parse(localStorage.getItem(key) || '{}');
-      const diary = localStorage.getItem(`ddxj_diary_${date}`) || '';
-      const dayGoal = localStorage.getItem(`ddxj_goals_day_${date}`) || '';
-      if (Object.keys(table).length > 0 || diary || dayGoal) {
-        await saveDayToFirestore(date, { table, diary, dayGoal });
-        seeded.days++;
-      }
-      continue;
-    }
-
-    const yearMatch = key.match(/^ddxj_goals_year_(\d{4})$/);
-    if (yearMatch) {
-      const yearGoal = localStorage.getItem(key) || '';
-      if (yearGoal) {
-        await saveGoalsToFirestore({ yearGoal });
-        seeded.goals = true;
-      }
-    }
-
-    const monthMatch2 = key.match(/^ddxj_goals_month_(\d{4}-\d{2})$/);
-    if (monthMatch2) {
-      const monthGoal = localStorage.getItem(key) || '';
-      if (monthGoal) {
-        const [y] = monthMatch2[1].split('-');
-        const existingYearGoal = localStorage.getItem(`ddxj_goals_year_${y}`) || '';
-        await saveGoalsToFirestore({ yearGoal: existingYearGoal, monthGoal });
-        seeded.goals = true;
-      }
-    }
-  }
-
-  const localTasks = JSON.parse(localStorage.getItem('ddxj_tasks') || '[]');
-  if (localTasks.length > 0 && !(localTasks.length === 1 && !localTasks[0].theme)) {
-    await saveTasksToFirestore(localTasks);
-    seeded.tasks = true;
-  }
-
-  const localReviews = JSON.parse(localStorage.getItem('ddxj_reviews') || '[]');
-  if (localReviews.length > 0) {
-    await saveReviewsToFirestore(localReviews);
-    seeded.reviews = true;
-  }
-
-  const localSettings = JSON.parse(localStorage.getItem('ddxj_settings') || '{}');
-  if (localSettings.displayName) {
-    await saveSettingsToFirestore(localSettings);
-    seeded.settings = true;
-  }
-
-  return seeded;
-}
 
 let loadId = 0;
 
@@ -147,22 +42,26 @@ async function loadDate() {
   const loadAt = currentDate;
   const myLoadId = ++loadId;
 
-  document.getElementById('dateDisplay').textContent = formatDate(currentDate);
-  document.getElementById('datePicker').value = currentDate;
+  document.getElementById('dateDisplay').textContent = formatDate(loadAt);
+  document.getElementById('datePicker').value = loadAt;
 
-  const isToday = currentDate === todayStr();
+  const isToday = loadAt === todayStr();
   document.getElementById('dateToday').classList.toggle('hidden', isToday);
 
-  const dayGoalKey = `ddxj_goals_day_${loadAt}`;
   const [y, m] = loadAt.split('-');
+  const dayGoalKey = `ddxj_goals_day_${loadAt}`;
+  const yearKey = `ddxj_goals_year_${y}`;
+  const monthKey = `ddxj_goals_month_${y}-${m}`;
+  const tableKey = `ddxj_table_${loadAt}`;
+  const diaryKey = `ddxj_diary_${loadAt}`;
 
-  tableData = JSON.parse(localStorage.getItem(`ddxj_table_${loadAt}`) || '{}');
-  diaryText = localStorage.getItem(`ddxj_diary_${loadAt}`) || '';
+  tableData = JSON.parse(localStorage.getItem(tableKey) || '{}');
+  diaryText = localStorage.getItem(diaryKey) || '';
   tasks = JSON.parse(localStorage.getItem('ddxj_tasks') || '[]');
   reviews = JSON.parse(localStorage.getItem('ddxj_reviews') || '[]');
   settings = JSON.parse(localStorage.getItem('ddxj_settings') || '{"displayName":""}');
-  document.getElementById('goalYear').value = localStorage.getItem(`ddxj_goals_year_${y}`) || '';
-  document.getElementById('goalMonth').value = localStorage.getItem(`ddxj_goals_month_${y}-${m}`) || '';
+  document.getElementById('goalYear').value = localStorage.getItem(yearKey) || '';
+  document.getElementById('goalMonth').value = localStorage.getItem(monthKey) || '';
   document.getElementById('goalDay').value = localStorage.getItem(dayGoalKey) || '';
 
   applySettings();
@@ -186,8 +85,8 @@ async function loadDate() {
       tableData = dayData.table || {};
       diaryText = dayData.diary || '';
       document.getElementById('goalDay').value = dayData.dayGoal || '';
-      localStorage.setItem(`ddxj_table_${loadAt}`, JSON.stringify(tableData));
-      localStorage.setItem(`ddxj_diary_${loadAt}`, diaryText);
+      localStorage.setItem(tableKey, JSON.stringify(tableData));
+      localStorage.setItem(diaryKey, diaryText);
       localStorage.setItem(dayGoalKey, dayData.dayGoal || '');
       buildTable();
       document.getElementById('diaryInput').value = diaryText;
@@ -196,8 +95,8 @@ async function loadDate() {
     if (goalsData) {
       document.getElementById('goalYear').value = goalsData.yearGoal || '';
       document.getElementById('goalMonth').value = goalsData.monthGoal || '';
-      localStorage.setItem(`ddxj_goals_year_${y}`, goalsData.yearGoal || '');
-      localStorage.setItem(`ddxj_goals_month_${y}-${m}`, goalsData.monthGoal || '');
+      localStorage.setItem(yearKey, goalsData.yearGoal || '');
+      localStorage.setItem(monthKey, goalsData.monthGoal || '');
     }
 
     if (tasksData) {
@@ -217,15 +116,45 @@ async function loadDate() {
       localStorage.setItem('ddxj_settings', JSON.stringify(settings));
       applySettings();
     }
-
-    if (!dayData && !goalsData && !tasksData && !reviewsData && !settingsData && !localStorageSeeded) {
-      localStorageSeeded = true;
-      await seedLocalStorageToFirestore();
-    }
   }
 
   if (document.getElementById('page-charts').classList.contains('active')) {
     renderCharts();
+  }
+}
+
+function flushSave() {
+  clearTimeout(saveTableTimer);
+  clearTimeout(saveDiaryTimer);
+  clearTimeout(saveGoalsTimer);
+  clearTimeout(saveTasksTimer);
+
+  diaryText = document.getElementById('diaryInput').value;
+  const dayGoal = document.getElementById('goalDay').value;
+  const yearGoal = document.getElementById('goalYear').value;
+  const monthGoal = document.getElementById('goalMonth').value;
+  const [y, m] = currentDate.split('-');
+  const tableKey = `ddxj_table_${currentDate}`;
+  const diaryKey = `ddxj_diary_${currentDate}`;
+  const dayGoalKey = `ddxj_goals_day_${currentDate}`;
+  const yearKey = `ddxj_goals_year_${y}`;
+  const monthKey = `ddxj_goals_month_${y}-${m}`;
+
+  localStorage.setItem(tableKey, JSON.stringify(tableData));
+  localStorage.setItem(diaryKey, diaryText);
+  localStorage.setItem(dayGoalKey, dayGoal);
+  localStorage.setItem(yearKey, yearGoal);
+  localStorage.setItem(monthKey, monthGoal);
+  localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
+  localStorage.setItem('ddxj_reviews', JSON.stringify(reviews));
+  localStorage.setItem('ddxj_settings', JSON.stringify(settings));
+
+  if (currentUser) {
+    saveDayToFirestore(currentDate, { table: tableData, diary: diaryText, dayGoal });
+    saveGoalsToFirestore({ yearGoal, monthGoal });
+    saveTasksToFirestore(tasks);
+    saveReviewsToFirestore(reviews);
+    saveSettingsToFirestore(settings);
   }
 }
 
@@ -329,7 +258,8 @@ function toggleReview(key, checked) {
 
 let saveTableTimer = null;
 function saveTable() {
-  localStorage.setItem(getKey('table'), JSON.stringify(tableData));
+  const tableKey = `ddxj_table_${currentDate}`;
+  localStorage.setItem(tableKey, JSON.stringify(tableData));
   if (currentUser) {
     clearTimeout(saveTableTimer);
     saveTableTimer = setTimeout(() => {
@@ -345,7 +275,8 @@ function saveTable() {
 let saveDiaryTimer = null;
 function saveDiary() {
   diaryText = document.getElementById('diaryInput').value;
-  localStorage.setItem(getKey('diary'), diaryText);
+  const diaryKey = `ddxj_diary_${currentDate}`;
+  localStorage.setItem(diaryKey, diaryText);
   if (currentUser) {
     clearTimeout(saveDiaryTimer);
     saveDiaryTimer = setTimeout(() => {
@@ -363,9 +294,10 @@ function saveGoals() {
   const yearVal = document.getElementById('goalYear').value;
   const monthVal = document.getElementById('goalMonth').value;
   const dayVal = document.getElementById('goalDay').value;
-  localStorage.setItem(goalKey('year'), yearVal);
-  localStorage.setItem(goalKey('month'), monthVal);
-  localStorage.setItem(goalKey('day'), dayVal);
+  const [y, m] = currentDate.split('-');
+  localStorage.setItem(`ddxj_goals_year_${y}`, yearVal);
+  localStorage.setItem(`ddxj_goals_month_${y}-${m}`, monthVal);
+  localStorage.setItem(`ddxj_goals_day_${currentDate}`, dayVal);
   if (currentUser) {
     clearTimeout(saveGoalsTimer);
     saveGoalsTimer = setTimeout(() => {
