@@ -73,7 +73,10 @@ async function loadDate() {
   if (tasks.length === 0) tasks = [{ theme: '', goal: '', total: 0, progress: 0, done: '' }];
   renderTasks();
 
+  console.log('[loadDate] currentUser:', currentUser ? currentUser.uid : 'null');
   if (currentUser) {
+    console.log('[loadDate] 從 Firestore 載入...');
+    showSyncStatus('syncing...', '#3498db');
     const [dayData, goalsData, tasksData, reviewsData, settingsData] = await Promise.all([
       loadDayFromFirestore(currentDate),
       loadGoalsFromFirestore(),
@@ -81,6 +84,7 @@ async function loadDate() {
       loadReviewsFromFirestore(),
       loadSettingsFromFirestore()
     ]);
+    console.log('[loadDate] Firestore 結果:', { dayData: !!dayData, goalsData: !!goalsData, tasksData: !!tasksData, reviewsData: !!reviewsData, settingsData: !!settingsData });
 
     if (dayData) {
       tableData = dayData.table || {};
@@ -117,6 +121,17 @@ async function loadDate() {
       localStorage.setItem('ddxj_settings', JSON.stringify(settings));
       applySettings();
     }
+
+    const hasData = dayData || goalsData || tasksData || reviewsData || settingsData;
+    if (hasData) {
+      showSyncStatus('✓ 已同步', '#27ae60');
+      setTimeout(hideSyncStatus, 2000);
+    } else {
+      hideSyncStatus();
+      console.log('[loadDate] Firestore 無資料');
+    }
+  } else {
+    console.log('[loadDate] 未登入，僅顯示離線資料');
   }
 
   if (document.getElementById('page-charts').classList.contains('active')) {
@@ -532,6 +547,29 @@ function renderReview() {
       </div>
     `;
   }).join('');
+}
+
+function showSyncStatus(msg, color) {
+  let bar = document.getElementById('syncErrorBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'syncErrorBar';
+    bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:6px 16px;font-size:12px;text-align:center;font-family:Noto Serif TC,serif;transition:opacity 0.3s;';
+    document.body.appendChild(bar);
+  }
+  bar.textContent = msg;
+  bar.style.background = color || '#27ae60';
+  bar.style.color = '#fff';
+  bar.style.display = 'block';
+  bar.style.opacity = '1';
+}
+
+function hideSyncStatus() {
+  const bar = document.getElementById('syncErrorBar');
+  if (bar) {
+    bar.style.opacity = '0';
+    setTimeout(() => { bar.style.display = 'none'; }, 300);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
