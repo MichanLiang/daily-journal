@@ -73,18 +73,40 @@ async function loadDate() {
   if (tasks.length === 0) tasks = [{ theme: '', goal: '', total: 0, progress: 0, done: '' }];
   renderTasks();
 
-  console.log('[loadDate] currentUser:', currentUser ? currentUser.uid : 'null');
   if (currentUser) {
-    console.log('[loadDate] 從 Firestore 載入...');
     showSyncStatus('syncing...', '#3498db');
-    const [dayData, goalsData, tasksData, reviewsData, settingsData] = await Promise.all([
-      loadDayFromFirestore(currentDate),
-      loadGoalsFromFirestore(),
-      loadTasksFromFirestore(),
-      loadReviewsFromFirestore(),
-      loadSettingsFromFirestore()
-    ]);
-    console.log('[loadDate] Firestore 結果:', { dayData: !!dayData, goalsData: !!goalsData, tasksData: !!tasksData, reviewsData: !!reviewsData, settingsData: !!settingsData });
+
+    function withTimeout(promise, name, ms) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(name + ' 逾時 ' + ms + 'ms')), ms))
+      ]);
+    }
+
+    let dayData = null, goalsData = null, tasksData = null, reviewsData = null, settingsData = null;
+    try {
+      dayData = await withTimeout(loadDayFromFirestore(currentDate), 'day', 8000);
+      showSyncStatus('日資料 ✓', '#3498db');
+    } catch (e) { showSyncError(e.message); }
+
+    try {
+      goalsData = await withTimeout(loadGoalsFromFirestore(), 'goals', 8000);
+      showSyncStatus('目標 ✓', '#3498db');
+    } catch (e) { showSyncError(e.message); }
+
+    try {
+      tasksData = await withTimeout(loadTasksFromFirestore(), 'tasks', 8000);
+      showSyncStatus('任務 ✓', '#3498db');
+    } catch (e) { showSyncError(e.message); }
+
+    try {
+      reviewsData = await withTimeout(loadReviewsFromFirestore(), 'reviews', 8000);
+      showSyncStatus('檢討 ✓', '#3498db');
+    } catch (e) { showSyncError(e.message); }
+
+    try {
+      settingsData = await withTimeout(loadSettingsFromFirestore(), 'settings', 8000);
+    } catch (e) { showSyncError(e.message); }
 
     if (dayData) {
       tableData = dayData.table || {};
@@ -124,14 +146,12 @@ async function loadDate() {
 
     const hasData = dayData || goalsData || tasksData || reviewsData || settingsData;
     if (hasData) {
-      showSyncStatus('✓ 已同步', '#27ae60');
+      showSyncStatus('✓ 同步完成', '#27ae60');
       setTimeout(hideSyncStatus, 2000);
     } else {
-      hideSyncStatus();
-      console.log('[loadDate] Firestore 無資料');
+      showSyncStatus('⚠ Firestore 無資料', '#e67e22');
+      setTimeout(hideSyncStatus, 4000);
     }
-  } else {
-    console.log('[loadDate] 未登入，僅顯示離線資料');
   }
 
   if (document.getElementById('page-charts').classList.contains('active')) {
