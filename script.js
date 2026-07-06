@@ -34,6 +34,32 @@ function todayStr() {
   return `${y}-${m}-${day}`;
 }
 
+function flushSave() {
+  clearTimeout(saveTableTimer);
+  clearTimeout(saveDiaryTimer);
+  clearTimeout(saveGoalsTimer);
+  clearTimeout(saveTasksTimer);
+  diaryText = document.getElementById('diaryInput').value;
+  const dayGoal = document.getElementById('goalDay').value;
+  const yearGoal = document.getElementById('goalYear').value;
+  const monthGoal = document.getElementById('goalMonth').value;
+  localStorage.setItem(getKey('table'), JSON.stringify(tableData));
+  localStorage.setItem(getKey('diary'), diaryText);
+  localStorage.setItem(goalKey('day'), dayGoal);
+  localStorage.setItem(goalKey('year'), yearGoal);
+  localStorage.setItem(goalKey('month'), monthGoal);
+  localStorage.setItem('ddxj_tasks', JSON.stringify(tasks));
+  localStorage.setItem('ddxj_reviews', JSON.stringify(reviews));
+  localStorage.setItem('ddxj_settings', JSON.stringify(settings));
+  if (currentUser) {
+    saveDayToFirestore(currentDate, { table: tableData, diary: diaryText, dayGoal });
+    saveGoalsToFirestore({ yearGoal, monthGoal });
+    saveTasksToFirestore(tasks);
+    saveReviewsToFirestore(reviews);
+    saveSettingsToFirestore(settings);
+  }
+}
+
 let currentDate = todayStr();
 
 function getKey(type) {
@@ -49,6 +75,70 @@ function goalKey(type) {
 
 function init() {
   loadDate();
+}
+
+let localStorageSeeded = false;
+
+async function seedLocalStorageToFirestore() {
+  const seeded = { days: 0, goals: false, tasks: false, reviews: false, settings: false };
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+
+    const dayMatch = key.match(/^ddxj_table_(\d{4}-\d{2}-\d{2})$/);
+    if (dayMatch) {
+      const date = dayMatch[1];
+      const table = JSON.parse(localStorage.getItem(key) || '{}');
+      const diary = localStorage.getItem(`ddxj_diary_${date}`) || '';
+      const dayGoal = localStorage.getItem(`ddxj_goals_day_${date}`) || '';
+      if (Object.keys(table).length > 0 || diary || dayGoal) {
+        await saveDayToFirestore(date, { table, diary, dayGoal });
+        seeded.days++;
+      }
+      continue;
+    }
+
+    const yearMatch = key.match(/^ddxj_goals_year_(\d{4})$/);
+    if (yearMatch) {
+      const yearGoal = localStorage.getItem(key) || '';
+      if (yearGoal) {
+        await saveGoalsToFirestore({ yearGoal });
+        seeded.goals = true;
+      }
+    }
+
+    const monthMatch2 = key.match(/^ddxj_goals_month_(\d{4}-\d{2})$/);
+    if (monthMatch2) {
+      const monthGoal = localStorage.getItem(key) || '';
+      if (monthGoal) {
+        const [y] = monthMatch2[1].split('-');
+        const existingYearGoal = localStorage.getItem(`ddxj_goals_year_${y}`) || '';
+        await saveGoalsToFirestore({ yearGoal: existingYearGoal, monthGoal });
+        seeded.goals = true;
+      }
+    }
+  }
+
+  const localTasks = JSON.parse(localStorage.getItem('ddxj_tasks') || '[]');
+  if (localTasks.length > 0 && !(localTasks.length === 1 && !localTasks[0].theme)) {
+    await saveTasksToFirestore(localTasks);
+    seeded.tasks = true;
+  }
+
+  const localReviews = JSON.parse(localStorage.getItem('ddxj_reviews') || '[]');
+  if (localReviews.length > 0) {
+    await saveReviewsToFirestore(localReviews);
+    seeded.reviews = true;
+  }
+
+  const localSettings = JSON.parse(localStorage.getItem('ddxj_settings') || '{}');
+  if (localSettings.displayName) {
+    await saveSettingsToFirestore(localSettings);
+    seeded.settings = true;
+  }
+
+  return seeded;
 }
 
 async function loadDate() {
@@ -117,6 +207,11 @@ async function loadDate() {
       localStorage.setItem('ddxj_settings', JSON.stringify(settings));
       applySettings();
     }
+
+    if (!dayData && !goalsData && !tasksData && !reviewsData && !settingsData && !localStorageSeeded) {
+      localStorageSeeded = true;
+      await seedLocalStorageToFirestore();
+    }
   }
 
   if (document.getElementById('page-charts').classList.contains('active')) {
@@ -130,6 +225,7 @@ function formatDate(str) {
 }
 
 function changeDate(delta) {
+  flushSave();
   const d = new Date(currentDate + 'T00:00:00');
   d.setDate(d.getDate() + delta);
   const y = d.getFullYear();
@@ -140,12 +236,14 @@ function changeDate(delta) {
 }
 
 function goToday() {
+  flushSave();
   currentDate = todayStr();
   loadDate();
 }
 
 function pickDate(val) {
   if (val) {
+    flushSave();
     currentDate = val;
     loadDate();
   }
