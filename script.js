@@ -74,39 +74,13 @@ async function loadDate() {
   renderTasks();
 
   if (currentUser) {
-    showSyncStatus('syncing... [' + currentUser.uid.slice(0, 8) + ']', '#3498db');
-
-    function withTimeout(promise, name, ms) {
-      return Promise.race([
-        promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error(name + ' 逾時 ' + ms + 'ms')), ms))
-      ]);
-    }
-
-    let dayData = null, goalsData = null, tasksData = null, reviewsData = null, settingsData = null;
-    try {
-      dayData = await withTimeout(loadDayFromFirestore(currentDate), 'day', 8000);
-      showSyncStatus('日資料 ✓', '#3498db');
-    } catch (e) { showSyncError(e.message); }
-
-    try {
-      goalsData = await withTimeout(loadGoalsFromFirestore(), 'goals', 8000);
-      showSyncStatus('目標 ✓', '#3498db');
-    } catch (e) { showSyncError(e.message); }
-
-    try {
-      tasksData = await withTimeout(loadTasksFromFirestore(), 'tasks', 8000);
-      showSyncStatus('任務 ✓', '#3498db');
-    } catch (e) { showSyncError(e.message); }
-
-    try {
-      reviewsData = await withTimeout(loadReviewsFromFirestore(), 'reviews', 8000);
-      showSyncStatus('檢討 ✓', '#3498db');
-    } catch (e) { showSyncError(e.message); }
-
-    try {
-      settingsData = await withTimeout(loadSettingsFromFirestore(), 'settings', 8000);
-    } catch (e) { showSyncError(e.message); }
+    const [dayData, goalsData, tasksData, reviewsData, settingsData] = await Promise.all([
+      loadDayFromFirestore(currentDate),
+      loadGoalsFromFirestore(),
+      loadTasksFromFirestore(),
+      loadReviewsFromFirestore(),
+      loadSettingsFromFirestore()
+    ]);
 
     if (dayData) {
       tableData = dayData.table || {};
@@ -142,15 +116,6 @@ async function loadDate() {
       settings = settingsData;
       localStorage.setItem('ddxj_settings', JSON.stringify(settings));
       applySettings();
-    }
-
-    const hasData = dayData || goalsData || tasksData || reviewsData || settingsData;
-    if (hasData) {
-      showSyncStatus('✓ 同步完成', '#27ae60');
-      setTimeout(hideSyncStatus, 2000);
-    } else {
-      showSyncStatus('⚠ Firestore 無資料', '#e67e22');
-      setTimeout(hideSyncStatus, 4000);
     }
   }
 
@@ -567,29 +532,6 @@ function renderReview() {
       </div>
     `;
   }).join('');
-}
-
-function showSyncStatus(msg, color) {
-  let bar = document.getElementById('syncErrorBar');
-  if (!bar) {
-    bar = document.createElement('div');
-    bar.id = 'syncErrorBar';
-    bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:6px 16px;font-size:12px;text-align:center;font-family:Noto Serif TC,serif;transition:opacity 0.3s;';
-    document.body.appendChild(bar);
-  }
-  bar.textContent = msg;
-  bar.style.background = color || '#27ae60';
-  bar.style.color = '#fff';
-  bar.style.display = 'block';
-  bar.style.opacity = '1';
-}
-
-function hideSyncStatus() {
-  const bar = document.getElementById('syncErrorBar');
-  if (bar) {
-    bar.style.opacity = '0';
-    setTimeout(() => { bar.style.display = 'none'; }, 300);
-  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
