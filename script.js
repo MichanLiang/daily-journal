@@ -635,6 +635,8 @@ function renderDiary() {
     `;
   }).join('');
 }
+
+document.addEventListener('DOMContentLoaded', () => {
   initAuth();
 
   document.querySelectorAll('.nav-tab').forEach(btn => {
