@@ -1000,3 +1000,84 @@ canvas { max-width: 100%; }
 .review-item-text {
   color: var(--text);
 }
+
+/* ── DIARY BOOK ── */
+.diary-month {
+  margin-bottom: 16px;
+}
+
+.diary-month:last-child {
+  margin-bottom: 0;
+}
+
+.diary-month-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.diary-month-header:hover {
+  background: var(--border);
+}
+
+.diary-month-arrow {
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  width: 12px;
+  text-align: center;
+}
+
+.diary-month.open .diary-month-arrow {
+  transform: rotate(90deg);
+}
+
+.diary-month-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.diary-month-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.diary-month-body {
+  display: none;
+  padding: 8px 0 0 0;
+}
+
+.diary-month.open .diary-month-body {
+  display: block;
+}
+
+.diary-entry {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.diary-entry:last-child {
+  border-bottom: none;
+}
+
+.diary-entry-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.diary-entry-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+}

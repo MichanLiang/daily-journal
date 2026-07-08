@@ -372,13 +372,14 @@ function switchTab(tab, el) {
   if (el) el.classList.add('active');
   const btn = document.getElementById('mobileTabBtn');
   if (btn) {
-    const labels = { plan: '計劃表', charts: '圖表', review: '檢討簿' };
+    const labels = { plan: '計劃表', charts: '圖表', review: '檢討簿', diary: '日記簿' };
     btn.textContent = labels[tab] + ' ▾';
   }
   const options = document.querySelectorAll('.mobile-tab-option');
   options.forEach(o => o.classList.toggle('active', o.dataset.tab === tab));
   if (tab === 'charts') renderCharts();
   if (tab === 'review') renderReview();
+  if (tab === 'diary') renderDiary();
 }
 
 function getChartData() {
@@ -581,7 +582,59 @@ function renderReview() {
   }).join('');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function renderDiary() {
+  const content = document.getElementById('diaryContent');
+  const entries = [];
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key.startsWith('ddxj_diary_')) continue;
+    const date = key.replace('ddxj_diary_', '');
+    const text = localStorage.getItem(key);
+    if (!text || !text.trim()) continue;
+    entries.push({ date, text: text.trim() });
+  }
+
+  entries.sort((a, b) => b.date.localeCompare(a.date));
+
+  if (entries.length === 0) {
+    content.innerHTML = '<div class="review-empty">目前沒有日記紀錄</div>';
+    return;
+  }
+
+  const grouped = {};
+  entries.forEach(e => {
+    const [y, m] = e.date.split('-');
+    const key = `${y}-${m}`;
+    const label = `${y} 年 ${parseInt(m)} 月`;
+    if (!grouped[key]) grouped[key] = { label, items: [] };
+    grouped[key].items.push(e);
+  });
+
+  const keys = Object.keys(grouped).sort().reverse();
+  const today = todayStr();
+
+  content.innerHTML = keys.map(k => {
+    const g = grouped[k];
+    return `
+      <div class="diary-month open">
+        <div class="diary-month-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="diary-month-arrow">▶</span>
+          <span class="diary-month-title">${g.label}</span>
+          <span class="diary-month-count">${g.items.length} 則</span>
+        </div>
+        <div class="diary-month-body">
+          ${g.items.map(e => `
+            <div class="diary-entry">
+              <div class="diary-entry-date">${formatDateShort(e.date)}${e.date === today ? '（今天）' : ''}</div>
+              <div class="diary-entry-text">${e.text}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
   initAuth();
 
   document.querySelectorAll('.nav-tab').forEach(btn => {
