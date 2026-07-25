@@ -865,6 +865,75 @@ canvas { max-width: 100%; }
   border-color: var(--accent);
 }
 
+.category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.category-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.category-tag .cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.category-tag .cat-remove {
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-left: 2px;
+  line-height: 1;
+}
+
+.category-tag .cat-remove:hover {
+  color: var(--red);
+}
+
+.category-tag.cat-default {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.category-add-row {
+  display: flex;
+  gap: 6px;
+}
+
+.category-add-row .settings-input {
+  flex: 1;
+}
+
+.btn-add-category {
+  padding: 6px 12px;
+  font-family: 'Noto Serif TC', serif;
+  font-size: 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-add-category:hover {
+  opacity: 0.85;
+}
+
 .btn-save-settings {
   width: 100%;
   padding: 8px;

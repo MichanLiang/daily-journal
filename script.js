@@ -1,6 +1,10 @@
 const HOURS = Array.from({length: 18}, (_, i) => i + 6);
-const CATEGORIES = ['', '例行事項', '學業', '工作', '社交', '自我提升', '睡眠'];
-const CAT_COLORS = {
+
+const DEFAULT_CATEGORIES = ['例行事項', '學業', '工作', '社交', '自我提升', '睡眠'];
+const MORANDI_COLORS = ['#B0A5C0', '#E5D5A0', '#A0B0C0', '#B5838D', '#A5B5A0', '#D4A5A0'];
+
+let CATEGORIES = ['', ...DEFAULT_CATEGORIES];
+let CAT_COLORS = {
   '社交':    '#B5838D',
   '睡眠':    '#D4A5A0',
   '學業':    '#E5D5A0',
@@ -8,13 +12,21 @@ const CAT_COLORS = {
   '工作':    '#A0B0C0',
   '例行事項':'#B0A5C0',
 };
-const CAT_CLASS = {
+let CAT_CLASS = {
   '例行事項': 'cat-routine',
   '學業':    'cat-study',
   '工作':    'cat-work',
   '社交':    'cat-social',
   '自我提升':'cat-growth',
   '睡眠':    'cat-sleep',
+};
+const CAT_STYLE = {
+  '例行事項': { bg: '#DDD5EA', border: '#B0A5C0', color: '#5A4A70' },
+  '學業':    { bg: '#F2ECDA', border: '#E5D5A0', color: '#7A6B3D' },
+  '工作':    { bg: '#D2DDE5', border: '#A0B0C0', color: '#4A6070' },
+  '社交':    { bg: '#E8CDD2', border: '#B5838D', color: '#7A4A55' },
+  '自我提升':{ bg: '#D5DDD2', border: '#A5B5A0', color: '#4A6048' },
+  '睡眠':    { bg: '#EEDDD8', border: '#D4A5A0', color: '#8A5A55' },
 };
 const ENG_CLASSES = ['', 'high', 'mid', 'low'];
 const ENG_VALUES = [0, 100, 70, 40];
@@ -24,7 +36,40 @@ let diaryText = '';
 let tasks = [];
 let charts = {};
 let reviews = [];
-let settings = { displayName: '' };
+let settings = { displayName: '', customCategories: [] };
+
+function getCustomCategories() {
+  return settings.customCategories || [];
+}
+
+function rebuildCategories() {
+  const custom = getCustomCategories();
+  CATEGORIES = ['', ...DEFAULT_CATEGORIES, ...custom];
+  const allCats = [...DEFAULT_CATEGORIES, ...custom];
+  allCats.forEach((c, i) => {
+    if (!CAT_COLORS[c]) {
+      CAT_COLORS[c] = MORANDI_COLORS[i % MORANDI_COLORS.length];
+    }
+  });
+}
+
+function addCustomCategory(name) {
+  name = name.trim();
+  if (!name || CATEGORIES.includes(name)) return false;
+  settings.customCategories = getCustomCategories();
+  settings.customCategories.push(name);
+  rebuildCategories();
+  renderCategorySettings();
+  saveSettings();
+  return true;
+}
+
+function removeCustomCategory(name) {
+  settings.customCategories = getCustomCategories().filter(c => c !== name);
+  rebuildCategories();
+  renderCategorySettings();
+  saveSettings();
+}
 
 function todayStr() {
   const d = new Date();
@@ -201,7 +246,7 @@ function buildTable() {
       <td><textarea class="cell-box" rows="1" data-r="${ri}" data-c="0" oninput="updateCell('${key}','todo',this.value)">${row.todo}</textarea></td>
       <td><textarea class="cell-box" rows="1" data-r="${ri}" data-c="1" oninput="updateCell('${key}','actual',this.value)">${row.actual}</textarea></td>
       <td>
-        <select class="category-select ${CAT_CLASS[row.cat]||''}" data-r="${ri}" data-c="2" onchange="updateCat('${key}',this)">
+        <select class="category-select ${CAT_CLASS[row.cat]||''}" data-r="${ri}" data-c="2" onchange="updateCat('${key}',this)"${!CAT_CLASS[row.cat] && row.cat ? ` style="background:${CAT_STYLE[row.cat]?.bg || '#eee'}"` : ''}>
           ${CATEGORIES.map(c => `<option value="${c}" ${c===row.cat?'selected':''}>${c||'—'}</option>`).join('')}
         </select>
       </td>
@@ -224,7 +269,15 @@ function updateCell(key, field, val) {
 
 function updateCat(key, sel) {
   tableData[key].cat = sel.value;
-  sel.className = `category-select ${CAT_CLASS[sel.value]||''}`;
+  const cls = CAT_CLASS[sel.value];
+  if (cls) {
+    sel.className = `category-select ${cls}`;
+    sel.style.cssText = '';
+  } else {
+    const bg = CAT_STYLE[sel.value]?.bg || '#eee';
+    sel.className = 'category-select';
+    sel.style.cssText = `background:${bg};`;
+  }
   saveTable();
 }
 
@@ -474,6 +527,7 @@ function renderCharts() {
 }
 
 function applySettings() {
+  rebuildCategories();
   const nameEl = document.getElementById('userName');
   if (settings.displayName) {
     nameEl.textContent = settings.displayName;
@@ -484,7 +538,23 @@ function applySettings() {
 
 function openSettings() {
   document.getElementById('inputDisplayName').value = settings.displayName || '';
+  renderCategorySettings();
   document.getElementById('settingsModal').classList.add('show');
+}
+
+function renderCategorySettings() {
+  const list = document.getElementById('categoryList');
+  const custom = getCustomCategories();
+  let html = '';
+  DEFAULT_CATEGORIES.forEach(c => {
+    const color = CAT_COLORS[c] || '#999';
+    html += `<div class="category-tag cat-default"><span class="cat-dot" style="background:${color}"></span>${c}</div>`;
+  });
+  custom.forEach(c => {
+    const color = CAT_COLORS[c] || '#999';
+    html += `<div class="category-tag"><span class="cat-dot" style="background:${color}"></span>${c}<span class="cat-remove" onclick="removeCustomCategory('${c}')">✕</span></div>`;
+  });
+  list.innerHTML = html;
 }
 
 function closeSettings() {
@@ -690,6 +760,24 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnCloseSettings').addEventListener('click', closeSettings);
   document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
   document.getElementById('btnLogoutFull').addEventListener('click', signOut);
+
+  document.getElementById('btnAddCategory').addEventListener('click', () => {
+    const input = document.getElementById('inputNewCategory');
+    const name = input.value.trim();
+    if (!name) return;
+    if (!addCustomCategory(name)) {
+      alert('此類別已存在');
+      return;
+    }
+    input.value = '';
+    buildTable();
+  });
+
+  document.getElementById('inputNewCategory').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      document.getElementById('btnAddCategory').click();
+    }
+  });
 
   document.getElementById('btnClearFirestore').addEventListener('click', async () => {
     if (!confirm('清除所有雲端資料（保留今天的）？此操作無法復原。')) return;
