@@ -139,9 +139,11 @@ async function loadDate() {
 
     if (goalsData) {
       document.getElementById('goalYear').value = goalsData.yearGoal || '';
-      document.getElementById('goalMonth').value = goalsData.monthGoal || '';
+      const monthGoals = goalsData.monthGoals || {};
+      const savedMonthGoal = monthGoals[`${y}-${m}`] || '';
+      document.getElementById('goalMonth').value = savedMonthGoal;
       localStorage.setItem(yearKey, goalsData.yearGoal || '');
-      localStorage.setItem(monthKey, goalsData.monthGoal || '');
+      localStorage.setItem(monthKey, savedMonthGoal);
     }
 
     if (tasksData) {
@@ -195,8 +197,10 @@ function flushSave() {
   localStorage.setItem('ddxj_settings', JSON.stringify(settings));
 
   if (currentUser) {
+    const monthGoals = {};
+    monthGoals[`${y}-${m}`] = monthGoal;
     saveDayToFirestore(currentDate, { table: tableData, diary: diaryText, dayGoal });
-    saveGoalsToFirestore({ yearGoal, monthGoal });
+    saveGoalsToFirestore({ yearGoal, monthGoals });
     saveTasksToFirestore(tasks);
     saveReviewsToFirestore(reviews);
     saveSettingsToFirestore(settings);
@@ -354,7 +358,9 @@ function saveGoals() {
   if (currentUser) {
     clearTimeout(saveGoalsTimer);
     saveGoalsTimer = setTimeout(() => {
-      saveGoalsToFirestore({ yearGoal: yearVal, monthGoal: monthVal });
+      const monthGoals = {};
+      monthGoals[`${y}-${m}`] = monthVal;
+      saveGoalsToFirestore({ yearGoal: yearVal, monthGoals });
       saveDayToFirestore(currentDate, {
         table: tableData,
         diary: diaryText,
